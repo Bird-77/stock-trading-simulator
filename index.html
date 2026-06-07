@@ -1,0 +1,1991 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>影子实验室：自我追逐</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #050816;
+      --panel: rgba(9, 16, 36, 0.82);
+      --panel-strong: rgba(12, 22, 49, 0.96);
+      --cyan: #22d3ee;
+      --blue: #3b82f6;
+      --red: #fb3349;
+      --yellow: #facc15;
+      --green: #2dd4bf;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: rgba(34, 211, 238, 0.24);
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(34, 211, 238, 0.18), transparent 28%),
+        radial-gradient(circle at 82% 12%, rgba(251, 51, 73, 0.16), transparent 26%),
+        radial-gradient(circle at 50% 92%, rgba(59, 130, 246, 0.15), transparent 30%),
+        linear-gradient(135deg, #030712 0%, #07111f 50%, #050816 100%);
+      font-family: "Microsoft YaHei", Arial, sans-serif;
+      color: var(--text);
+      padding: 18px;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent 88%);
+    }
+
+    .game-shell {
+      width: min(96vw, 940px);
+      position: relative;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.95));
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow:
+        0 22px 70px rgba(0, 0, 0, 0.55),
+        inset 0 0 30px rgba(34, 211, 238, 0.05);
+      backdrop-filter: blur(16px);
+    }
+
+    .top-area {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .title-block h1 {
+      font-size: clamp(26px, 4vw, 40px);
+      letter-spacing: 2px;
+      line-height: 1.15;
+      text-shadow: 0 0 18px rgba(34, 211, 238, 0.35);
+    }
+
+    .title-block p {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .lab-badge {
+      min-width: 148px;
+      text-align: center;
+      padding: 10px 12px;
+      border-radius: 999px;
+      color: #001018;
+      background: linear-gradient(135deg, var(--cyan), var(--green));
+      box-shadow: 0 0 20px rgba(34, 211, 238, 0.35);
+      font-weight: 700;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    .info-bar {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .info-card {
+      position: relative;
+      overflow: hidden;
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 16px;
+      padding: 12px 10px;
+      text-align: center;
+      line-height: 1.5;
+      box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.03);
+    }
+
+    .info-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+      transform: translateX(-110%);
+      animation: scanCard 4.8s linear infinite;
+    }
+
+    @keyframes scanCard {
+      0% { transform: translateX(-120%); }
+      55% { transform: translateX(120%); }
+      100% { transform: translateX(120%); }
+    }
+
+    .info-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+
+    .info-card strong {
+      display: block;
+      margin-top: 2px;
+      font-size: 22px;
+      color: var(--cyan);
+      text-shadow: 0 0 14px rgba(34, 211, 238, 0.4);
+    }
+
+    .stage-card strong {
+      font-size: 17px;
+      color: var(--yellow);
+    }
+
+    .canvas-frame {
+      position: relative;
+      padding: 12px;
+      border-radius: 22px;
+      background:
+        linear-gradient(135deg, rgba(34, 211, 238, 0.22), rgba(251, 51, 73, 0.18)),
+        rgba(2, 6, 23, 0.7);
+      border: 1px solid rgba(34, 211, 238, 0.26);
+      box-shadow: 0 0 34px rgba(34, 211, 238, 0.08);
+    }
+
+    .canvas-label {
+      position: absolute;
+      left: 26px;
+      top: 22px;
+      z-index: 2;
+      padding: 6px 10px;
+      border-radius: 999px;
+      color: #cffafe;
+      background: rgba(2, 6, 23, 0.72);
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      font-size: 12px;
+      letter-spacing: 1px;
+      backdrop-filter: blur(10px);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #07111f;
+      border: 2px solid rgba(34, 211, 238, 0.5);
+      border-radius: 16px;
+      touch-action: none;
+      box-shadow:
+        inset 0 0 32px rgba(34, 211, 238, 0.08),
+        inset 0 0 90px rgba(251, 51, 73, 0.04);
+    }
+
+    .control-panel {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: center;
+      margin-top: 14px;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 10px;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 11px 18px;
+      background: linear-gradient(135deg, #2563eb, #06b6d4);
+      color: white;
+      font-size: 15px;
+      cursor: pointer;
+      transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
+      user-select: none;
+      box-shadow: 0 8px 22px rgba(37, 99, 235, 0.24);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+      box-shadow: 0 10px 28px rgba(34, 211, 238, 0.3);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .secondary {
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.26);
+      box-shadow: none;
+    }
+
+    .tips {
+      color: #cbd5e1;
+      font-size: 13px;
+      line-height: 1.7;
+      text-align: right;
+    }
+
+    .mobile-controls {
+      display: grid;
+      grid-template-columns: repeat(3, 58px);
+      grid-template-rows: repeat(3, 46px);
+      justify-content: center;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .mobile-controls button {
+      padding: 0;
+      font-size: 20px;
+      background: rgba(13, 148, 136, 0.88);
+      border: 1px solid rgba(45, 212, 191, 0.28);
+      box-shadow: 0 0 18px rgba(45, 212, 191, 0.12);
+    }
+
+    .empty {
+      visibility: hidden;
+    }
+
+    @media (max-width: 780px) {
+      .top-area,
+      .control-panel {
+        grid-template-columns: 1fr;
+        display: grid;
+      }
+
+      .lab-badge {
+        justify-self: start;
+      }
+
+      .info-bar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .tips {
+        text-align: left;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+
+      .game-shell {
+        padding: 12px;
+        border-radius: 18px;
+      }
+
+      .info-bar {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        padding: 9px 14px;
+      }
+    }
+    /* S 级混沌效果 */
+    @keyframes screenShake {
+      0%, 100% { transform: translate(0, 0); }
+      10% { transform: translate(-5px, 4px); }
+      20% { transform: translate(6px, -3px); }
+      30% { transform: translate(-4px, -5px); }
+      40% { transform: translate(5px, 3px); }
+      50% { transform: translate(-6px, -4px); }
+      60% { transform: translate(4px, 6px); }
+      70% { transform: translate(-3px, -2px); }
+      80% { transform: translate(6px, -5px); }
+      90% { transform: translate(-5px, 4px); }
+    }
+
+    @keyframes redFlash {
+      0% { opacity: 0; }
+      25% { opacity: 0.2; }
+      50% { opacity: 0.45; }
+      75% { opacity: 0.15; }
+      100% { opacity: 0.35; }
+    }
+
+    .game-shell.shaking {
+      animation: screenShake 0.06s infinite;
+    }
+
+    .chaos-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, rgba(220, 20, 20, 0.45), rgba(140, 0, 0, 0.2));
+      opacity: 0;
+      z-index: 998;
+      transition: opacity 0.2s;
+    }
+
+    .chaos-overlay.active {
+      animation: redFlash 0.1s infinite;
+    }
+  </style>
+</head>
+<body>
+  <main class="game-shell">
+    <section class="top-area">
+      <div class="title-block">
+        <h1>影子实验室：自我追逐</h1>
+        <p>实验体需要收集能量核心，同时躲避由自身轨迹生成的复制体。分数越高，实验室危险等级越高。</p>
+      </div>
+      <div class="lab-badge">LAB-05 / RUNNING</div>
+    </section>
+
+    <section class="info-bar">
+      <div class="info-card">
+        <span>生存指数</span>
+        <strong id="score">0</strong>
+      </div>
+      <div class="info-card">
+        <span>最高纪录</span>
+        <strong id="bestScore">0</strong>
+      </div>
+      <div class="info-card">
+        <span>复制体数量</span>
+        <strong id="shadowCount">0</strong>
+      </div>
+      <div class="info-card">
+        <span>危险装置</span>
+        <strong id="bombCount">0</strong>
+      </div>
+      <div class="info-card stage-card">
+        <span>实验阶段</span>
+        <strong id="stageLabel">安全</strong>
+      </div>
+    </section>
+
+    <section class="canvas-frame">
+      <div class="canvas-label">EXPERIMENT FIELD // AVOID YOUR PAST</div>
+      <canvas id="gameCanvas" width="720" height="460"></canvas>
+    </section>
+
+    <section class="control-panel">
+      <div class="button-row">
+        <button id="startBtn">启动实验</button>
+        <button id="pauseBtn" class="secondary">暂停实验</button>
+        <button id="restartBtn" class="secondary">重新实验</button>
+      </div>
+      <p class="tips">
+        方向键 / WASD 控制移动。300 分后出现 5 秒倒计时炸弹；500 分后复制体上限提高到 5 个。
+      </p>
+    </section>
+
+    <section class="mobile-controls" aria-label="手机方向控制">
+      <button class="empty">.</button>
+      <button data-dir="up">↑</button>
+      <button class="empty">.</button>
+      <button data-dir="left">←</button>
+      <button data-dir="down">↓</button>
+      <button data-dir="right">→</button>
+      <button class="empty">.</button>
+      <button class="empty">.</button>
+      <button class="empty">.</button>
+    </section>
+    <div class="chaos-overlay" id="chaosOverlay"></div>
+  </main>
+
+  <script>
+    // =========================
+    // 1. 基础元素与游戏常量
+    // =========================
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const scoreEl = document.getElementById("score");
+    const bestScoreEl = document.getElementById("bestScore");
+    const shadowCountEl = document.getElementById("shadowCount");
+    const bombCountEl = document.getElementById("bombCount");
+    const stageLabelEl = document.getElementById("stageLabel");
+
+    const startBtn = document.getElementById("startBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const restartBtn = document.getElementById("restartBtn");
+
+    const W = canvas.width;
+    const H = canvas.height;
+
+    const player = {
+      x: W / 2,
+      y: H / 2,
+      r: 12,
+      speed: 235
+    };
+
+    const energy = {
+      x: 120,
+      y: 120,
+      r: 9
+    };
+
+    const keys = {
+      up: false,
+      down: false,
+      left: false,
+      right: false
+    };
+
+    let gameState = "ready"; // ready | running | paused | gameover
+    let score = 0;
+    let bestScore = Number(localStorage.getItem("shadowLabBestScore")) || 0;
+    let gameTime = 0;
+    let secondAccumulator = 0;
+    let lastFrameTime = 0;
+    let animationId = null;
+
+    // trail 用来记录玩家历史轨迹，复制体会读取几秒前的位置。
+    let trail = [];
+
+    // bombs 用来存储场景中的炸弹。300 分后开始随机出现，每个炸弹存在 5 秒后消失。
+    let bombs = [];
+    let bombSpawnTimer = 0;
+
+    // 难度提示只在首次达到对应分数时显示一次。
+    let bombWarningShown = false;
+    let shadowWarningShown = false;
+    let difficultyMessage = "";
+    let difficultyMessageTimer = 0;
+
+    bestScoreEl.textContent = bestScore;
+
+    let previousStage = "安全"; // 用于检测阶段变化触发音效
+    let chaosTriggered = false;  // 是否已触发 S 级混沌效果
+
+    // =========================
+    // 1.5 音频系统 (Web Audio API 程序化生成)
+    // =========================
+    const GameAudio = {
+      ctx: null,
+      masterGain: null,
+      musicGain: null,
+      sfxGain: null,
+      initialized: false,
+      musicPlaying: false,
+      stage: "safe",
+      chaosMode: false,
+
+      schedulerTimer: null,
+      nextStepTime: 0,
+      stepDuration: 0,
+      currentStep: 0,
+      bpm: 80,
+
+      droneNodes: [],
+      activeNotes: [],
+
+      scales: {
+        safe:    [130.81, 164.81, 196.00, 220.00, 261.63],
+        alert:   [164.81, 196.00, 220.00, 261.63, 329.63],
+        danger:  [196.00, 220.00, 261.63, 293.66, 329.63],
+        outofcontrol: [220.00, 261.63, 293.66, 349.23, 392.00],
+        chaos:   [220.00, 233.08, 261.63, 277.18, 293.66, 311.13, 329.63, 349.23]
+      },
+
+      async _ensureContext() {
+        if (this.initialized) return;
+        try {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          if (this.ctx.state === "suspended") await this.ctx.resume();
+
+          this.masterGain = this.ctx.createGain();
+          this.masterGain.gain.value = 0.3;
+          this.masterGain.connect(this.ctx.destination);
+
+          const comp = this.ctx.createDynamicsCompressor();
+          comp.threshold.value = -20; comp.knee.value = 20; comp.ratio.value = 8;
+          comp.attack.value = 0.005; comp.release.value = 0.2;
+          comp.connect(this.masterGain);
+
+          this.musicGain = this.ctx.createGain();
+          this.musicGain.gain.value = 0.5;
+          this.musicGain.connect(comp);
+
+          this.sfxGain = this.ctx.createGain();
+          this.sfxGain.gain.value = 0.6;
+          this.sfxGain.connect(comp);
+
+          this.initialized = true;
+        } catch (e) { console.warn("Web Audio API 初始化失败:", e); }
+      },
+
+      async startMusic() {
+        await this._ensureContext();
+        if (!this.initialized || this.musicPlaying) return;
+        this.musicPlaying = true;
+        this.chaosMode = false;
+        this.stage = "safe";
+        this.bpm = 80;
+        this.currentStep = 0;
+        this.nextStepTime = this.ctx.currentTime + 0.1;
+        this.stepDuration = 60 / this.bpm / 4;
+        this._createDrone();
+        this._scheduleLoop();
+      },
+
+      stopMusic() {
+        this.musicPlaying = false;
+        this.chaosMode = false;
+        if (this.schedulerTimer) { clearTimeout(this.schedulerTimer); this.schedulerTimer = null; }
+        this._destroyDrone();
+        this._cleanupNotes();
+      },
+
+      _createDrone() {
+        this._destroyDrone();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const filter = this.ctx.createBiquadFilter();
+        const lfo = this.ctx.createOscillator();
+        const lfoG = this.ctx.createGain();
+
+        osc.type = "triangle";
+        osc.frequency.value = 55;
+        lfo.frequency.value = 0.15;
+        lfoG.gain.value = 3;
+        lfo.connect(lfoG);
+        lfoG.connect(osc.frequency);
+
+        filter.type = "lowpass";
+        filter.frequency.value = 180;
+        filter.Q.value = 2;
+
+        gain.gain.value = 0.2;
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.musicGain);
+
+        osc.start();
+        lfo.start();
+        this.droneNodes.push(osc, lfo);
+      },
+
+      _createChaosDrone() {
+        this._destroyDrone();
+        [55, 56.5, 110.5].forEach(f => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const filter = this.ctx.createBiquadFilter();
+          const lfo = this.ctx.createOscillator();
+          const lfoG = this.ctx.createGain();
+
+          osc.type = "sawtooth";
+          osc.frequency.value = f;
+          osc.detune.value = (Math.random() - 0.5) * 30;
+          lfo.frequency.value = 6 + Math.random() * 8;
+          lfoG.gain.value = 8 + Math.random() * 12;
+          lfo.connect(lfoG);
+          lfoG.connect(osc.frequency);
+          lfo.start();
+
+          filter.type = "lowpass";
+          filter.frequency.value = 200 + Math.random() * 200;
+          gain.gain.value = 0.18;
+
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.musicGain);
+          osc.start();
+          this.droneNodes.push(osc, lfo);
+        });
+
+        // 噪声层
+        const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * 2, this.ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        const noise = this.ctx.createBufferSource();
+        const nGain = this.ctx.createGain();
+        const nFilt = this.ctx.createBiquadFilter();
+        noise.buffer = buf; noise.loop = true;
+        nFilt.type = "bandpass"; nFilt.frequency.value = 800; nFilt.Q.value = 0.5;
+        nGain.gain.value = 0.06;
+        noise.connect(nFilt); nFilt.connect(nGain); nGain.connect(this.musicGain);
+        noise.start();
+        this.droneNodes.push(noise);
+      },
+
+      _destroyDrone() {
+        this.droneNodes.forEach(n => { try { n.stop(); } catch (e) {} });
+        this.droneNodes = [];
+      },
+
+      _cleanupNotes() {
+        this.activeNotes.forEach(n => { try { n.osc.stop(); } catch (e) {} });
+        this.activeNotes = [];
+      },
+
+      _scheduleLoop() {
+        if (!this.musicPlaying) return;
+        while (this.nextStepTime < this.ctx.currentTime + 0.2) {
+          this._playStep(this.currentStep, this.nextStepTime);
+          this.currentStep++;
+          this.nextStepTime += this.stepDuration;
+        }
+        this.schedulerTimer = setTimeout(() => this._scheduleLoop(), 50);
+      },
+
+      _playStep(step, time) {
+        const key = this.chaosMode ? "chaos" : this.stage;
+        const scale = this.scales[key];
+        let shouldPlay;
+        if (this.chaosMode || this.stage === "outofcontrol") shouldPlay = true;
+        else if (this.stage === "danger" || this.stage === "alert") shouldPlay = step % 2 === 0;
+        else shouldPlay = step % 4 === 0;
+
+        if (shouldPlay) {
+          const div = this.chaosMode ? 1 : (this.stage === "outofcontrol" ? 2 : (this.stage === "danger" || this.stage === "alert") ? 3 : 4);
+          const idx = Math.floor(step / div) % scale.length;
+          const dur = this.stepDuration * (this.chaosMode ? 0.5 : 1.5);
+          this._playSynthNote(scale[idx], time, dur);
+        }
+
+        if (step % 8 === 0) this._playBassDrum(time);
+        if ((this.stage === "danger" || this.stage === "outofcontrol" || this.chaosMode) && step % 2 === 1) this._playHiHat(time);
+      },
+
+      _playSynthNote(freq, t, dur) {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const filt = this.ctx.createBiquadFilter();
+
+        osc.type = this.chaosMode ? "sawtooth" : "square";
+        const det = this.chaosMode ? (Math.random() - 0.5) * 80 : 0;
+        osc.frequency.value = freq + det;
+        filt.type = "lowpass";
+        filt.frequency.value = this.chaosMode ? 900 : 500;
+
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.07, t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+
+        osc.connect(filt); filt.connect(gain); gain.connect(this.musicGain);
+        osc.start(t); osc.stop(t + dur + 0.05);
+
+        const ref = { osc };
+        this.activeNotes.push(ref);
+        osc.onended = () => { const i = this.activeNotes.indexOf(ref); if (i >= 0) this.activeNotes.splice(i, 1); };
+      },
+
+      _playBassDrum(t) {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(150, t);
+        osc.frequency.exponentialRampToValueAtTime(35, t + 0.1);
+        gain.gain.setValueAtTime(0.25, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+        osc.connect(gain); gain.connect(this.musicGain);
+        osc.start(t); osc.stop(t + 0.2);
+      },
+
+      _playHiHat(t) {
+        const sz = Math.floor(this.ctx.sampleRate * 0.04);
+        const buf = this.ctx.createBuffer(1, sz, this.ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < sz; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / sz, 6);
+        const src = this.ctx.createBufferSource();
+        const gain = this.ctx.createGain();
+        const filt = this.ctx.createBiquadFilter();
+        src.buffer = buf;
+        filt.type = "highpass"; filt.frequency.value = 8000;
+        gain.gain.setValueAtTime(0.05, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+        src.connect(filt); filt.connect(gain); gain.connect(this.musicGain);
+        src.start(t);
+      },
+
+      setStage(stage) {
+        if (this.stage === stage && !this.chaosMode) return;
+        this.stage = stage;
+        if (this.chaosMode) return;
+
+        this.bpm = stage === "outofcontrol" ? 120 : stage === "danger" ? 105 : stage === "alert" ? 90 : 80;
+        this.stepDuration = 60 / this.bpm / 4;
+        if (this.droneNodes.length) {
+          const f = stage === "outofcontrol" ? 41 : stage === "danger" ? 49 : 55;
+          // 找到第一个振荡器调整频率
+          for (const n of this.droneNodes) {
+            if (n instanceof OscillatorNode && n.frequency) {
+              n.frequency.setTargetAtTime(f, this.ctx.currentTime, 0.5);
+              break;
+            }
+          }
+        }
+      },
+
+      enableChaosMode() {
+        if (!this.initialized) return;
+        this.stopMusic();
+        this.musicPlaying = true;
+        this.chaosMode = true;
+        this.bpm = 150 + Math.floor(Math.random() * 40);
+        this.stepDuration = 60 / this.bpm / 4;
+        this.currentStep = 0;
+        this.nextStepTime = this.ctx.currentTime + 0.05;
+        this.musicGain.gain.setTargetAtTime(0.8, this.ctx.currentTime, 0.05);
+        this._createChaosDrone();
+        this._scheduleLoop();
+      },
+
+      // ---- 音效 ----
+      playPickup() {
+        if (!this.initialized) return;
+        const t = this.ctx.currentTime;
+        [523.25, 659.25, 783.99].forEach((f, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = "sine"; osc.frequency.value = f;
+          gain.gain.setValueAtTime(0, t + i * 0.06);
+          gain.gain.linearRampToValueAtTime(0.12, t + i * 0.06 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.06 + 0.14);
+          osc.connect(gain); gain.connect(this.sfxGain);
+          osc.start(t + i * 0.06); osc.stop(t + i * 0.06 + 0.18);
+        });
+      },
+
+      playBombSpawn() {
+        if (!this.initialized) return;
+        const t = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(180, t);
+        osc.frequency.exponentialRampToValueAtTime(70, t + 0.5);
+        gain.gain.setValueAtTime(0.1, t);
+        gain.gain.linearRampToValueAtTime(0.06, t + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+        osc.connect(gain); gain.connect(this.sfxGain);
+        osc.start(t); osc.stop(t + 0.6);
+      },
+
+      playDeath() {
+        if (!this.initialized) return;
+        const t = this.ctx.currentTime;
+        const sz = Math.floor(this.ctx.sampleRate * 0.6);
+        const buf = this.ctx.createBuffer(1, sz, this.ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < sz; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / sz, 1.5);
+        const noise = this.ctx.createBufferSource();
+        const nGain = this.ctx.createGain();
+        noise.buffer = buf;
+        nGain.gain.setValueAtTime(0.25, t);
+        nGain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+        noise.connect(nGain); nGain.connect(this.sfxGain);
+        noise.start(t);
+
+        const osc = this.ctx.createOscillator();
+        const oGain = this.ctx.createGain();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(350, t);
+        osc.frequency.exponentialRampToValueAtTime(25, t + 0.7);
+        oGain.gain.setValueAtTime(0.15, t);
+        oGain.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+        osc.connect(oGain); oGain.connect(this.sfxGain);
+        osc.start(t); osc.stop(t + 0.7);
+      },
+
+      playStageUp() {
+        if (!this.initialized) return;
+        const t = this.ctx.currentTime;
+        [261.63, 329.63, 392.00].forEach((f, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = "triangle"; osc.frequency.value = f;
+          gain.gain.setValueAtTime(0, t + i * 0.12);
+          gain.gain.linearRampToValueAtTime(0.1, t + i * 0.12 + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.12 + 0.22);
+          osc.connect(gain); gain.connect(this.sfxGain);
+          osc.start(t + i * 0.12); osc.stop(t + i * 0.12 + 0.25);
+        });
+      }
+    };
+
+    // 混沌视觉效果
+    function triggerChaosEffects() {
+      document.querySelector(".game-shell")?.classList.add("shaking");
+      document.getElementById("chaosOverlay")?.classList.add("active");
+      GameAudio.enableChaosMode();
+    }
+
+    function stopChaosEffects() {
+      document.querySelector(".game-shell")?.classList.remove("shaking");
+      document.getElementById("chaosOverlay")?.classList.remove("active");
+    }
+
+    // =========================
+    // 2. 工具函数
+    // =========================
+    function distance(a, b) {
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function randomBetween(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function getStageText() {
+      if (score >= 500) return "失控";
+      if (score >= 300) return "危险";
+      if (score >= 120) return "警戒";
+      return "安全";
+    }
+
+    // 根据最终分数给出结算评级。
+    function getResultRating(finalScore) {
+      if (finalScore >= 900) {
+        return {
+          grade: "S+",
+          title: "异常生还者",
+          comment: "你几乎压制了整个实验系统，复制体追踪已接近失效。",
+          progress: "实验记录：极限突破"
+        };
+      }
+
+      if (finalScore >= 650) {
+        return {
+          grade: "S",
+          title: "高级实验体",
+          comment: "你在高危阶段保持了稳定判断，但复制体数量已经形成强压。",
+          progress: "实验记录：高阶通过"
+        };
+      }
+
+      if (finalScore >= 500) {
+        return {
+          grade: "A",
+          title: "失控边缘",
+          comment: "你成功进入复制体扩增阶段，下一步要减少回头路线。",
+          progress: "实验记录：进入失控区"
+        };
+      }
+
+      if (finalScore >= 300) {
+        return {
+          grade: "B",
+          title: "危险适应者",
+          comment: "你撑过了基础追踪阶段，并开始面对倒计时炸弹。",
+          progress: "实验记录：进入危险区"
+        };
+      }
+
+      if (finalScore >= 120) {
+        return {
+          grade: "C",
+          title: "初步觉醒",
+          comment: "你已经理解影子机制，但还需要规划移动路线。",
+          progress: "实验记录：警戒阶段"
+        };
+      }
+
+      return {
+        grade: "D",
+        title: "实验中断",
+        comment: "复制体尚未完全形成压力，建议先避免贴近边界移动。",
+        progress: "实验记录：基础阶段"
+      };
+    }
+
+    function updatePanel() {
+      scoreEl.textContent = Math.floor(score);
+      bestScoreEl.textContent = bestScore;
+      shadowCountEl.textContent = getActiveShadows().length;
+      bombCountEl.textContent = bombs.length;
+      stageLabelEl.textContent = getStageText();
+    }
+
+    // 显示阶段性难度提升提示。
+    function showDifficultyMessage(text) {
+      difficultyMessage = text;
+      difficultyMessageTimer = 3.2;
+    }
+
+    // 随机生成黄色能量核心，避免直接生成在玩家或炸弹附近。
+    function spawnEnergy() {
+      const margin = 42;
+      let tries = 0;
+
+      do {
+        energy.x = randomBetween(margin, W - margin);
+        energy.y = randomBetween(margin, H - margin);
+        tries++;
+      } while ((distance(player, energy) < 90 || bombs.some(bomb => distance(bomb, energy) < 55)) && tries < 80);
+    }
+
+    // 300 分后，场景中允许出现炸弹。分数越高，允许同时存在的炸弹越多。
+    function getMaxBombs() {
+      if (score < 300) return 0;
+      if (score < 400) return 1;
+      if (score < 500) return 2;
+      return 3;
+    }
+
+    // 随机生成一个炸弹，避免离玩家或能量核心太近。
+    function spawnBomb() {
+      const margin = 52;
+      const bomb = {
+        x: randomBetween(margin, W - margin),
+        y: randomBetween(margin, H - margin),
+        r: 15,
+        createdAt: gameTime,
+        life: 5,
+        pulseOffset: Math.random() * Math.PI * 2
+      };
+
+      let tries = 0;
+      while (
+        (
+          distance(bomb, player) < 120 ||
+          distance(bomb, energy) < 70 ||
+          bombs.some(existingBomb => distance(existingBomb, bomb) < 70)
+        ) && tries < 100
+      ) {
+        bomb.x = randomBetween(margin, W - margin);
+        bomb.y = randomBetween(margin, H - margin);
+        tries++;
+      }
+
+      bombs.push(bomb);
+    }
+
+    // 根据分数增加复制体数量。
+    // 500 分前最多 3 个，500 分后最多 5 个。
+    function getActiveShadows() {
+      const shadows = [{ delay: 5, r: 12, alpha: 0.95 }];
+
+      if (score >= 55) {
+        shadows.push({ delay: 7, r: 12, alpha: 0.78 });
+      }
+
+      if (score >= 120) {
+        shadows.push({ delay: 9, r: 12, alpha: 0.62 });
+      }
+
+      if (score >= 500) {
+        shadows.push({ delay: 11, r: 12, alpha: 0.5 });
+        shadows.push({ delay: 13, r: 12, alpha: 0.42 });
+      }
+
+      return shadows.filter(shadow => gameTime >= shadow.delay);
+    }
+
+    // 从历史轨迹中找出 delay 秒前的位置。
+    function getTrailPosition(delay) {
+      const targetTime = gameTime - delay;
+
+      if (targetTime < 0 || trail.length < 2) {
+        return null;
+      }
+
+      // 从后向前查找，通常更快，因为目标时间接近当前时间。
+      for (let i = trail.length - 2; i >= 0; i--) {
+        const a = trail[i];
+        const b = trail[i + 1];
+
+        if (a.time <= targetTime && b.time >= targetTime) {
+          const span = b.time - a.time || 1;
+          const t = (targetTime - a.time) / span;
+
+          return {
+            x: a.x + (b.x - a.x) * t,
+            y: a.y + (b.y - a.y) * t
+          };
+        }
+      }
+
+      return trail[0] || null;
+    }
+
+    function resetGame() {
+      cancelAnimationFrame(animationId);
+
+      gameState = "ready";
+      score = 0;
+      gameTime = 0;
+      secondAccumulator = 0;
+      lastFrameTime = 0;
+      trail = [];
+      bombs = [];
+      bombSpawnTimer = 0;
+      bombWarningShown = false;
+      shadowWarningShown = false;
+      difficultyMessage = "";
+      difficultyMessageTimer = 0;
+
+      player.x = W / 2;
+      player.y = H / 2;
+
+      keys.up = false;
+      keys.down = false;
+      keys.left = false;
+      keys.right = false;
+
+      GameAudio.stopMusic();
+      stopChaosEffects();
+      previousStage = "安全";
+      chaosTriggered = false;
+
+      spawnEnergy();
+      updatePanel();
+      animationId = requestAnimationFrame(idleLoop);
+    }
+
+    function startGame() {
+      if (gameState === "running") return;
+
+      // 初始化音频（需要用户手势）
+      GameAudio.startMusic();
+      stopChaosEffects();
+
+      // 开始游戏时停止封面动画循环，切换为正式游戏循环。
+      cancelAnimationFrame(animationId);
+
+      if (gameState === "ready" || gameState === "gameover") {
+        score = 0;
+        gameTime = 0;
+        secondAccumulator = 0;
+        trail = [];
+        bombs = [];
+        bombSpawnTimer = 0;
+        bombWarningShown = false;
+        shadowWarningShown = false;
+        difficultyMessage = "";
+        difficultyMessageTimer = 0;
+        player.x = W / 2;
+        player.y = H / 2;
+        previousStage = "安全";
+        spawnEnergy();
+      }
+
+      gameState = "running";
+      lastFrameTime = performance.now();
+      animationId = requestAnimationFrame(gameLoop);
+    }
+
+    function togglePause() {
+      if (gameState === "running") {
+        gameState = "paused";
+        drawPauseScreen();
+        return;
+      }
+
+      if (gameState === "paused") {
+        gameState = "running";
+        lastFrameTime = performance.now();
+        animationId = requestAnimationFrame(gameLoop);
+      }
+    }
+
+    function endGame() {
+      gameState = "gameover";
+      bestScore = Math.max(bestScore, Math.floor(score));
+      localStorage.setItem("shadowLabBestScore", bestScore);
+      updatePanel();
+
+      const finalScore = Math.floor(score);
+      const rating = getResultRating(finalScore);
+
+      if (rating.grade === "S" || rating.grade === "S+") {
+        // S 级：混沌效果已在游戏过程中触发，保持运行
+        if (!chaosTriggered) {
+          triggerChaosEffects();
+        }
+        // 不停止音乐，让混沌音效持续作为结算背景
+        // S+ 持续动画循环
+        cancelAnimationFrame(animationId);
+        animationId = requestAnimationFrame(gameOverLoop);
+      } else {
+        // 非 S 级：停止所有混沌效果
+        GameAudio.playDeath();
+        GameAudio.stopMusic();
+        stopChaosEffects();
+        drawGameOverScreen();
+      }
+    }
+
+    function gameOverLoop(now) {
+      if (gameState !== "gameover") return;
+      lastFrameTime = now;
+      gameTime += 0.016;
+      drawGameOverScreen();
+      animationId = requestAnimationFrame(gameOverLoop);
+    }
+
+    // =========================
+    // 3. 游戏更新逻辑
+    // =========================
+    function update(dt) {
+      gameTime += dt;
+      secondAccumulator += dt;
+
+      if (difficultyMessageTimer > 0) {
+        difficultyMessageTimer -= dt;
+      }
+
+      // 每坚持 1 秒增加 1 分。
+      if (secondAccumulator >= 1) {
+        const wholeSeconds = Math.floor(secondAccumulator);
+        score += wholeSeconds;
+        secondAccumulator -= wholeSeconds;
+      }
+
+      // 检测阶段变化，更新音乐
+      const currentStage = getStageText();
+      if (currentStage !== previousStage) {
+        if (previousStage !== "安全") GameAudio.playStageUp();
+        GameAudio.setStage(
+          currentStage === "失控" ? "outofcontrol" :
+          currentStage === "危险" ? "danger" :
+          currentStage === "警戒" ? "alert" : "safe"
+        );
+        previousStage = currentStage;
+      }
+
+      // 达到 300 分后，提示炸弹机制加入。
+      if (score >= 300 && !bombWarningShown) {
+        bombWarningShown = true;
+        showDifficultyMessage("危险等级提升：倒计时炸弹已启动，5 秒后自动消失！");
+      }
+
+      // 达到 500 分后，提示复制体上限提升到 5 个。
+      if (score >= 500 && !shadowWarningShown) {
+        shadowWarningShown = true;
+        showDifficultyMessage("实验失控：复制体数量上限增加到 5 个！");
+      }
+
+      // 达到 650 分（S 级）后触发混沌效果：窗口震动 + 红光闪烁 + 混乱音乐
+      if (score >= 650 && !chaosTriggered) {
+        chaosTriggered = true;
+        triggerChaosEffects();
+        showDifficultyMessage("⚠ 系统过载！实验体突破 S 级临界点 ⚠");
+      }
+
+      // 计算玩家移动方向。
+      let dx = 0;
+      let dy = 0;
+
+      if (keys.left) dx -= 1;
+      if (keys.right) dx += 1;
+      if (keys.up) dy -= 1;
+      if (keys.down) dy += 1;
+
+      // 对角移动时归一化，避免斜向速度过快。
+      if (dx !== 0 || dy !== 0) {
+        const len = Math.sqrt(dx * dx + dy * dy);
+        dx /= len;
+        dy /= len;
+      }
+
+      player.x += dx * player.speed * dt;
+      player.y += dy * player.speed * dt;
+
+      // 记录玩家轨迹。
+      trail.push({ time: gameTime, x: player.x, y: player.y });
+
+      // 只保留最近 15 秒轨迹，保证 13 秒延迟复制体可以正常读取。
+      while (trail.length > 0 && trail[0].time < gameTime - 15) {
+        trail.shift();
+      }
+
+      // 玩家碰到危险边界则失败。
+      if (
+        player.x - player.r <= 0 ||
+        player.x + player.r >= W ||
+        player.y - player.r <= 0 ||
+        player.y + player.r >= H
+      ) {
+        endGame();
+        return;
+      }
+
+      // 炸弹存在 5 秒后自动消失。
+      bombs = bombs.filter(bomb => gameTime - bomb.createdAt < bomb.life);
+
+      // 300 分之后开始随机补充炸弹，场景中炸弹数量不会超过当前上限。
+      const maxBombs = getMaxBombs();
+      if (maxBombs > 0) {
+        bombSpawnTimer += dt;
+        const spawnInterval = score >= 500 ? 3.2 : 4.5;
+
+        if (bombSpawnTimer >= spawnInterval && bombs.length < maxBombs) {
+          spawnBomb();
+          GameAudio.playBombSpawn();
+          bombSpawnTimer = 0;
+        }
+      }
+
+      // 收集黄色能量核心。
+      if (distance(player, energy) < player.r + energy.r) {
+        score += 10;
+        GameAudio.playPickup();
+        spawnEnergy();
+      }
+
+      // 与炸弹碰撞则失败。
+      for (const bomb of bombs) {
+        if (distance(player, bomb) < player.r + bomb.r - 2) {
+          endGame();
+          return;
+        }
+      }
+
+      // 与复制体碰撞则失败。
+      const activeShadows = getActiveShadows();
+      for (const shadow of activeShadows) {
+        const shadowPos = getTrailPosition(shadow.delay);
+        if (!shadowPos) continue;
+
+        if (distance(player, shadowPos) < player.r + shadow.r - 1) {
+          endGame();
+          return;
+        }
+      }
+
+      updatePanel();
+    }
+
+    // =========================
+    // 4. 绘制逻辑
+    // =========================
+    function drawBackground() {
+      ctx.clearRect(0, 0, W, H);
+
+      const gradient = ctx.createRadialGradient(W / 2, H / 2, 40, W / 2, H / 2, W * 0.75);
+      gradient.addColorStop(0, "#0f1f3d");
+      gradient.addColorStop(0.55, "#07111f");
+      gradient.addColorStop(1, "#030712");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, W, H);
+
+      // 实验室地面网格。
+      ctx.save();
+      ctx.strokeStyle = "rgba(34, 211, 238, 0.10)";
+      ctx.lineWidth = 1;
+      for (let x = 30; x < W; x += 30) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, H);
+        ctx.stroke();
+      }
+      for (let y = 30; y < H; y += 30) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 危险边界发光。
+      ctx.save();
+      ctx.strokeStyle = "rgba(251, 51, 73, 0.78)";
+      ctx.lineWidth = 8;
+      ctx.shadowColor = "#fb3349";
+      ctx.shadowBlur = 18;
+      ctx.strokeRect(4, 4, W - 8, H - 8);
+      ctx.restore();
+    }
+
+    function drawCircle(x, y, r, color, shadowBlur = 0) {
+      ctx.save();
+      ctx.shadowColor = color;
+      ctx.shadowBlur = shadowBlur;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawEnergy() {
+      // 能量核心。
+      drawCircle(energy.x, energy.y, energy.r, "#facc15", 18);
+
+      const pulse = 5 + Math.sin(gameTime * 6) * 2;
+      ctx.save();
+      ctx.strokeStyle = "rgba(250, 204, 21, 0.58)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(energy.x, energy.y, energy.r + pulse, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = "rgba(250, 204, 21, 0.9)";
+      ctx.font = "bold 10px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("CORE", energy.x, energy.y - 18);
+      ctx.restore();
+    }
+
+    function drawBombs() {
+      bombs.forEach(bomb => {
+        const pulse = Math.sin(gameTime * 5 + bomb.pulseOffset) * 2;
+        const remain = Math.max(0, bomb.life - (gameTime - bomb.createdAt));
+
+        ctx.save();
+        ctx.shadowColor = "#fb3349";
+        ctx.shadowBlur = 16;
+        ctx.fillStyle = "#0f172a";
+        ctx.beginPath();
+        ctx.arc(bomb.x, bomb.y, bomb.r + pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(251, 51, 73, 0.92)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(bomb.x, bomb.y, bomb.r + 6, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 炸弹上方短引线。
+        ctx.strokeStyle = "#f97316";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(bomb.x + 8, bomb.y - 11);
+        ctx.quadraticCurveTo(bomb.x + 18, bomb.y - 22, bomb.x + 24, bomb.y - 15);
+        ctx.stroke();
+
+        ctx.fillStyle = "#fb3349";
+        ctx.font = "bold 16px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("!", bomb.x, bomb.y + 1);
+
+        // 炸弹剩余存在时间。
+        ctx.fillStyle = "rgba(248, 250, 252, 0.96)";
+        ctx.font = "bold 11px Arial";
+        ctx.fillText(remain.toFixed(1), bomb.x, bomb.y + 31);
+        ctx.restore();
+      });
+    }
+
+    function drawTrail() {
+      if (trail.length < 2) return;
+
+      ctx.save();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(59, 130, 246, 0.22)";
+      ctx.shadowColor = "#3b82f6";
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+
+      for (let i = 0; i < trail.length; i += 3) {
+        const point = trail[i];
+        if (i === 0) {
+          ctx.moveTo(point.x, point.y);
+        } else {
+          ctx.lineTo(point.x, point.y);
+        }
+      }
+
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawShadows() {
+      const activeShadows = getActiveShadows();
+
+      activeShadows.forEach((shadow, index) => {
+        const pos = getTrailPosition(shadow.delay);
+        if (!pos) return;
+
+        ctx.save();
+        ctx.globalAlpha = shadow.alpha;
+        drawCircle(pos.x, pos.y, shadow.r, "#fb3349", 18);
+
+        ctx.fillStyle = "white";
+        ctx.font = "bold 12px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(index + 1), pos.x, pos.y);
+        ctx.restore();
+      });
+    }
+
+    function drawPlayer() {
+      drawCircle(player.x, player.y, player.r, "#3b82f6", 20);
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(34, 211, 238, 0.9)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.r + 5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawWarningText() {
+      if (gameTime < 5 && gameState === "running") {
+        const remaining = Math.ceil(5 - gameTime);
+        ctx.save();
+        ctx.fillStyle = "rgba(2, 6, 23, 0.78)";
+        ctx.strokeStyle = "rgba(34, 211, 238, 0.42)";
+        ctx.lineWidth = 1;
+        roundRect(ctx, W / 2 - 160, 24, 320, 42, 12);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "#cffafe";
+        ctx.font = "bold 18px Microsoft YaHei, Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(`复制体将在 ${remaining} 秒后出现`, W / 2, 51);
+        ctx.restore();
+      }
+    }
+
+    function drawDifficultyMessage() {
+      if (difficultyMessageTimer <= 0 || !difficultyMessage) return;
+
+      ctx.save();
+      ctx.fillStyle = "rgba(127, 29, 29, 0.9)";
+      ctx.strokeStyle = "rgba(254, 202, 202, 0.9)";
+      ctx.lineWidth = 2;
+      roundRect(ctx, W / 2 - 255, 18, 510, 54, 14);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 18px Microsoft YaHei, Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(difficultyMessage, W / 2, 45);
+      ctx.restore();
+    }
+
+    function drawStageCorner() {
+      ctx.save();
+      ctx.fillStyle = "rgba(2, 6, 23, 0.62)";
+      ctx.strokeStyle = "rgba(34, 211, 238, 0.24)";
+      ctx.lineWidth = 1;
+      roundRect(ctx, W - 160, H - 48, 130, 30, 10);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "12px Microsoft YaHei, Arial";
+      ctx.textAlign = "center";
+      ctx.fillText(`阶段：${getStageText()}`, W - 95, H - 29);
+      ctx.restore();
+    }
+
+    // 兼容不支持 ctx.roundRect 的浏览器。
+    function roundRect(context, x, y, width, height, radius) {
+      context.beginPath();
+      context.moveTo(x + radius, y);
+      context.lineTo(x + width - radius, y);
+      context.quadraticCurveTo(x + width, y, x + width, y + radius);
+      context.lineTo(x + width, y + height - radius);
+      context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      context.lineTo(x + radius, y + height);
+      context.quadraticCurveTo(x, y + height, x, y + height - radius);
+      context.lineTo(x, y + radius);
+      context.quadraticCurveTo(x, y, x + radius, y);
+      context.closePath();
+    }
+
+    function drawGame() {
+      drawBackground();
+      drawTrail();
+      drawEnergy();
+      drawBombs();
+      drawShadows();
+      drawPlayer();
+      drawStageCorner();
+      drawWarningText();
+      drawDifficultyMessage();
+    }
+
+    function drawCenteredMessage(title, subtitle) {
+      drawGame();
+
+      ctx.save();
+      ctx.fillStyle = "rgba(2, 6, 23, 0.78)";
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.strokeStyle = "rgba(34, 211, 238, 0.4)";
+      ctx.lineWidth = 2;
+      roundRect(ctx, W / 2 - 230, H / 2 - 92, 460, 150, 18);
+      ctx.stroke();
+
+      ctx.fillStyle = "white";
+      ctx.textAlign = "center";
+      ctx.font = "bold 34px Microsoft YaHei, Arial";
+      ctx.fillText(title, W / 2, H / 2 - 28);
+
+      ctx.font = "17px Microsoft YaHei, Arial";
+      ctx.fillStyle = "#cbd5e1";
+      ctx.fillText(subtitle, W / 2, H / 2 + 18);
+      ctx.restore();
+    }
+
+    function drawReadyScreen() {
+      drawBackground();
+
+      // 封面层：用动态光圈和扫描线制造"实验启动前"的感觉。
+      ctx.save();
+      ctx.fillStyle = "rgba(2, 6, 23, 0.58)";
+      ctx.fillRect(0, 0, W, H);
+
+      const cx = W / 2;
+      const cy = H / 2 - 10;
+      const pulse = Math.sin(gameTime * 2.8) * 8;
+      const rotation = gameTime * 0.9;
+
+      // 中央实验核心。
+      ctx.translate(cx, cy);
+      for (let i = 0; i < 4; i++) {
+        ctx.save();
+        ctx.rotate(rotation + i * Math.PI / 4);
+        ctx.strokeStyle = i % 2 === 0 ? "rgba(34, 211, 238, 0.72)" : "rgba(251, 51, 73, 0.55)";
+        ctx.lineWidth = 2;
+        ctx.shadowColor = i % 2 === 0 ? "#22d3ee" : "#fb3349";
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(0, 0, 76 + i * 19 + pulse * 0.25, 0.15, Math.PI * 1.35);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      drawCircle(0, 0, 18 + pulse * 0.08, "#3b82f6", 28);
+      ctx.restore();
+
+      // 漂浮粒子。
+      ctx.save();
+      for (let i = 0; i < 28; i++) {
+        const px = (i * 97 + Math.sin(gameTime * 0.7 + i) * 24) % W;
+        const py = (i * 53 + Math.cos(gameTime * 0.8 + i * 0.4) * 18) % H;
+        const alpha = 0.22 + Math.sin(gameTime * 2 + i) * 0.12;
+        ctx.fillStyle = `rgba(34, 211, 238, ${alpha})`;
+        ctx.fillRect(px, py, 2, 2);
+      }
+      ctx.restore();
+
+      // 半透明信息面板。
+      ctx.save();
+      ctx.fillStyle = "rgba(2, 6, 23, 0.74)";
+      ctx.strokeStyle = "rgba(34, 211, 238, 0.45)";
+      ctx.lineWidth = 2;
+      roundRect(ctx, W / 2 - 255, H / 2 - 126, 510, 252, 22);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.font = "bold 34px Microsoft YaHei, Arial";
+      ctx.shadowColor = "#22d3ee";
+      ctx.shadowBlur = 18;
+      ctx.fillText("影子实验启动中", W / 2, H / 2 - 62);
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#cbd5e1";
+      ctx.font = "15px Microsoft YaHei, Arial";
+      ctx.fillText("收集能量核心，躲避由自身轨迹生成的复制体。", W / 2, H / 2 - 22);
+      ctx.fillText("300 分后启动倒计时炸弹，500 分后复制体扩增。", W / 2, H / 2 + 6);
+
+      // 闪烁启动提示。
+      const blink = 0.55 + Math.sin(gameTime * 4) * 0.25;
+      ctx.fillStyle = `rgba(250, 204, 21, ${blink})`;
+      ctx.font = "bold 18px Microsoft YaHei, Arial";
+      ctx.fillText("点击「启动实验」开始", W / 2, H / 2 + 54);
+
+      // 底部扫描线。
+      const scanX = ((gameTime * 180) % 510);
+      ctx.strokeStyle = "rgba(34, 211, 238, 0.72)";
+      ctx.beginPath();
+      ctx.moveTo(W / 2 - 255 + scanX, H / 2 + 96);
+      ctx.lineTo(W / 2 - 205 + scanX, H / 2 + 96);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPauseScreen() {
+      drawCenteredMessage("实验已暂停", "点击\"暂停实验\"继续");
+    }
+
+    function drawGameOverScreen() {
+      drawGame();
+
+      const finalScore = Math.floor(score);
+      const rating = getResultRating(finalScore);
+
+      // S+ 专属赛博朋克结算画面
+      if (rating.grade === "S+") {
+        drawSPlusScreen(rating, finalScore);
+        return;
+      }
+
+      ctx.save();
+      ctx.fillStyle = "rgba(2, 6, 23, 0.82)";
+      ctx.fillRect(0, 0, W, H);
+
+      // 失败结算主面板。
+      ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+      ctx.strokeStyle = rating.grade === "S" ? "rgba(34, 211, 238, 0.7)" : "rgba(251, 51, 73, 0.55)";
+      ctx.lineWidth = 2;
+      roundRect(ctx, W / 2 - 270, H / 2 - 152, 540, 292, 24);
+      ctx.fill();
+      ctx.stroke();
+
+      // 顶部标题。
+      const titleText = rating.grade === "S" ? "实验突破" : "实验失败";
+      const titleColor = rating.grade === "S" ? "#22d3ee" : "#fb3349";
+      ctx.fillStyle = titleColor;
+      ctx.font = "bold 28px Microsoft YaHei, Arial";
+      ctx.textAlign = "center";
+      ctx.shadowColor = titleColor;
+      ctx.shadowBlur = 16;
+      ctx.fillText(titleText, W / 2, H / 2 - 105);
+      ctx.shadowBlur = 0;
+
+      // 评级圆章。
+      const badgeColor = rating.grade === "S" ? "#22d3ee" : "#facc15";
+      ctx.strokeStyle = rating.grade === "S" ? "rgba(34, 211, 238, 0.85)" : "rgba(250, 204, 21, 0.85)";
+      ctx.fillStyle = rating.grade === "S" ? "rgba(34, 211, 238, 0.08)" : "rgba(250, 204, 21, 0.08)";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(W / 2 - 175, H / 2 - 10, 54, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = badgeColor;
+      ctx.font = "bold 42px Arial";
+      ctx.fillText(rating.grade, W / 2 - 175, H / 2 + 4);
+
+      // 结算文字。
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 24px Microsoft YaHei, Arial";
+      ctx.fillText(rating.title, W / 2 - 95, H / 2 - 42);
+
+      ctx.fillStyle = "#cbd5e1";
+      ctx.font = "15px Microsoft YaHei, Arial";
+      ctx.fillText(`最终生存指数：${finalScore}`, W / 2 - 95, H / 2 - 10);
+      ctx.fillText(`最高纪录：${bestScore}`, W / 2 - 95, H / 2 + 18);
+      ctx.fillText(rating.progress, W / 2 - 95, H / 2 + 46);
+
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "14px Microsoft YaHei, Arial";
+      wrapCanvasText(ctx, rating.comment, W / 2 - 220, H / 2 + 86, 440, 22);
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#22d3ee";
+      ctx.font = "bold 15px Microsoft YaHei, Arial";
+      ctx.fillText("点击「重新实验」再次挑战", W / 2, H / 2 + 124);
+      ctx.restore();
+    }
+
+    // S+ 赛博朋克结算画面
+    function drawSPlusScreen(rating, finalScore) {
+      ctx.save();
+
+      // 深色覆盖层
+      ctx.fillStyle = "rgba(2, 6, 23, 0.9)";
+      ctx.fillRect(0, 0, W, H);
+
+      // 扫描线
+      ctx.strokeStyle = "rgba(34, 211, 238, 0.05)";
+      ctx.lineWidth = 1;
+      for (let y = 0; y < H; y += 3) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+
+      // 六边形装饰网格（背景）
+      ctx.strokeStyle = "rgba(34, 211, 238, 0.04)";
+      ctx.lineWidth = 0.5;
+      const hexR = 28;
+      for (let hx = -hexR; hx < W + hexR; hx += hexR * 1.8) {
+        for (let hy = -hexR; hy < H + hexR; hy += hexR * 3.1) {
+          const ox = hy % (hexR * 6.2) < hexR * 3.1 ? hexR * 0.9 : 0;
+          ctx.beginPath();
+          for (let i = 0; i < 6; i++) {
+            const a = Math.PI / 3 * i;
+            const px = hx + ox + Math.cos(a) * hexR * 0.5;
+            const py = hy + Math.sin(a) * hexR * 0.5;
+            i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+          }
+          ctx.closePath(); ctx.stroke();
+        }
+      }
+
+      // 漂浮数据粒子
+      for (let i = 0; i < 35; i++) {
+        const seed = i * 137.5;
+        const px = ((seed * 3.7 + Math.sin(gameTime * 0.6 + i * 1.3) * 55) % W + W) % W;
+        const py = ((seed * 2.3 + Math.cos(gameTime * 0.4 + i * 0.9) * 40) % H + H) % H;
+        const alpha = 0.25 + Math.sin(gameTime * 2.5 + i) * 0.2;
+        ctx.fillStyle = `rgba(34, 211, 238, ${alpha})`;
+        ctx.fillRect(px, py, 1.5, 1.5);
+      }
+
+      // 赛博朋克角标
+      function drawBracket(x, y, rot) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rot);
+        ctx.strokeStyle = "#22d3ee";
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = "#22d3ee";
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.moveTo(0, 36); ctx.lineTo(0, 0); ctx.lineTo(36, 0);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      }
+      drawBracket(28, 28, 0);
+      drawBracket(W - 28, 28, Math.PI / 2);
+      drawBracket(W - 28, H - 28, Math.PI);
+      drawBracket(28, H - 28, -Math.PI / 2);
+
+      // 中央面板背景
+      const panelW = 520, panelH = 260;
+      ctx.fillStyle = "rgba(8, 16, 40, 0.9)";
+      ctx.strokeStyle = "rgba(34, 211, 238, 0.5)";
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = "#22d3ee";
+      ctx.shadowBlur = 10;
+      roundRect(ctx, W / 2 - panelW / 2, H / 2 - panelH / 2, panelW, panelH, 18);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // 顶部故障标题（三色偏移）
+      const glitchX = Math.sin(gameTime * 28) * 2.5;
+      const title = "◆ 实验终止：系统过载 ◆";
+      ctx.font = "bold 20px Microsoft YaHei, Arial";
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(34, 211, 238, 0.6)";
+      ctx.fillText(title, W / 2 + glitchX, H / 2 - 98);
+      ctx.fillStyle = "rgba(251, 51, 73, 0.6)";
+      ctx.fillText(title, W / 2 - glitchX, H / 2 - 96);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(title, W / 2, H / 2 - 97);
+
+      // 随机故障条纹
+      if (Math.random() < 0.35) {
+        const gy = H / 2 - panelH / 2 + 40 + Math.random() * (panelH - 80);
+        const gw = 30 + Math.random() * 120;
+        const gx = W / 2 - panelW / 2 + 20 + Math.random() * (panelW - gw - 40);
+        ctx.fillStyle = `rgba(${Math.random() < 0.5 ? '34,211,238' : '251,51,73'}, 0.25)`;
+        ctx.fillRect(gx, gy, gw, 1.5 + Math.random() * 3);
+      }
+
+      // S+ 评级（脉冲发光）
+      const ratingPulse = 1 + Math.sin(gameTime * 3.5) * 0.08;
+      ctx.save();
+      ctx.translate(W / 2, H / 2 - 15);
+      ctx.scale(ratingPulse, ratingPulse);
+      ctx.font = "bold 100px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      // 多层发光
+      for (let i = 3; i >= 0; i--) {
+        ctx.shadowColor = i % 2 === 0 ? "#22d3ee" : "#fb3349";
+        ctx.shadowBlur = 15 + i * 12;
+        ctx.fillStyle = i === 0 ? "#ffffff" : "rgba(34, 211, 238, 0.3)";
+        ctx.fillText(rating.grade, (3 - i) * 1.5, (3 - i) * 1.5);
+      }
+      ctx.restore();
+
+      // 称号
+      ctx.fillStyle = "#22d3ee";
+      ctx.font = "bold 22px Microsoft YaHei, Arial";
+      ctx.textAlign = "center";
+      ctx.shadowColor = "#22d3ee";
+      ctx.shadowBlur = 10;
+      ctx.fillText(rating.title, W / 2, H / 2 + 42);
+      ctx.shadowBlur = 0;
+
+      // 数据展示行
+      const dataY = H / 2 + 72;
+      const dataW = 380;
+      ctx.fillStyle = "rgba(2, 6, 23, 0.7)";
+      ctx.strokeStyle = "rgba(34, 211, 238, 0.25)";
+      ctx.lineWidth = 1;
+      roundRect(ctx, W / 2 - dataW / 2, dataY - 4, dataW, 52, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "12px Arial";
+      ctx.textAlign = "center";
+      const dataItems = [
+        `SURVIVAL: ${finalScore}`,
+        `PEAK: ${bestScore}`,
+        `SHADOWS: ${getActiveShadows().length}`,
+        `LAB: OVERLOAD`
+      ];
+      const itemW = dataW / dataItems.length;
+      dataItems.forEach((item, i) => {
+        ctx.fillText(item, W / 2 - dataW / 2 + itemW * i + itemW / 2, dataY + 14);
+      });
+
+      // 评价文字
+      ctx.fillStyle = "#cbd5e1";
+      ctx.font = "14px Microsoft YaHei, Arial";
+      wrapCanvasText(ctx, rating.comment, W / 2 - 220, dataY + 80, 440, 22);
+
+      // 底部提示
+      const blinkAlpha = 0.5 + Math.sin(gameTime * 4) * 0.4;
+      ctx.fillStyle = `rgba(34, 211, 238, ${blinkAlpha})`;
+      ctx.font = "bold 15px Microsoft YaHei, Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("点击「重新实验」再次挑战", W / 2, H / 2 + panelH / 2 - 20);
+
+      ctx.restore();
+    }
+
+    // Canvas 文本自动换行，用于结算评价语。
+    function wrapCanvasText(context, text, x, y, maxWidth, lineHeight) {
+      let line = "";
+      let drawY = y;
+
+      for (let i = 0; i < text.length; i++) {
+        const testLine = line + text[i];
+        const metrics = context.measureText(testLine);
+
+        if (metrics.width > maxWidth && i > 0) {
+          context.fillText(line, x, drawY);
+          line = text[i];
+          drawY += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+
+      context.fillText(line, x, drawY);
+    }
+
+    // =========================
+    // 5. 主循环
+    // =========================
+    function idleLoop(now) {
+      if (gameState !== "ready") return;
+
+      const dt = Math.min((now - lastFrameTime) / 1000, 0.033) || 0.016;
+      lastFrameTime = now;
+      gameTime += dt;
+      drawReadyScreen();
+      animationId = requestAnimationFrame(idleLoop);
+    }
+
+    function gameLoop(now) {
+      if (gameState !== "running") return;
+
+      const dt = Math.min((now - lastFrameTime) / 1000, 0.033);
+      lastFrameTime = now;
+
+      update(dt);
+
+      if (gameState === "running") {
+        drawGame();
+        animationId = requestAnimationFrame(gameLoop);
+      }
+    }
+
+    // =========================
+    // 6. 键盘与手机控制
+    // =========================
+    function setKey(code, isPressed) {
+      const key = code.toLowerCase();
+
+      if (key === "arrowup" || key === "w") keys.up = isPressed;
+      if (key === "arrowdown" || key === "s") keys.down = isPressed;
+      if (key === "arrowleft" || key === "a") keys.left = isPressed;
+      if (key === "arrowright" || key === "d") keys.right = isPressed;
+    }
+
+    window.addEventListener("keydown", event => {
+      const controlKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d", "W", "A", "S", "D"];
+      if (controlKeys.includes(event.key)) {
+        event.preventDefault();
+        setKey(event.key, true);
+      }
+
+      // 调试快捷键
+      if (event.key === "t" || event.key === "T") {
+        event.preventDefault();
+        if (gameState === "running") {
+          score = 920;
+          chaosTriggered = true;
+          triggerChaosEffects();
+          endGame();
+        }
+      }
+      if (event.key === "y" || event.key === "Y") {
+        event.preventDefault();
+        if (gameState === "running") {
+          // 跳转到 S 级门槛，触发混沌效果
+          score = 660;
+          if (!chaosTriggered) {
+            chaosTriggered = true;
+            triggerChaosEffects();
+            showDifficultyMessage("⚠ 系统过载！实验体突破 S 级临界点 ⚠");
+          }
+        }
+      }
+    });
+
+    window.addEventListener("keyup", event => {
+      setKey(event.key, false);
+    });
+
+    // 手机方向按钮：按住移动，松开停止。
+    document.querySelectorAll(".mobile-controls button[data-dir]").forEach(button => {
+      const dir = button.dataset.dir;
+
+      const press = event => {
+        event.preventDefault();
+        keys[dir] = true;
+      };
+
+      const release = event => {
+        event.preventDefault();
+        keys[dir] = false;
+      };
+
+      button.addEventListener("mousedown", press);
+      button.addEventListener("mouseup", release);
+      button.addEventListener("mouseleave", release);
+      button.addEventListener("touchstart", press, { passive: false });
+      button.addEventListener("touchend", release, { passive: false });
+      button.addEventListener("touchcancel", release, { passive: false });
+    });
+
+    // =========================
+    // 7. 按钮事件
+    // =========================
+    startBtn.addEventListener("click", startGame);
+    pauseBtn.addEventListener("click", togglePause);
+    restartBtn.addEventListener("click", () => {
+      resetGame();
+      startGame();
+    });
+
+    // 页面打开后先显示准备界面。
+    resetGame();
+  </script>
+</body>
+</html>
